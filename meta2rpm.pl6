@@ -23,24 +23,17 @@ sub create-spec-file($meta-text) {
 
     mkdir $dir;
     my @files = fetch-source(:$package-name, :$source-url, :$source-dir, :$dir, :$tar-name);
-    my $provides = provides(:$meta);
-    my $requires = requires(:$meta);
     my $license-file = @files.grep({$_ eq 'LICENSE' or $_ eq 'LICENCE'}).first // '';
 
     $dir.IO.child("$package-name.spec").spurt:
-        fill-template(:$meta, :$package-name, :$version, :$tar-name, :$source-url, :$provides, :$requires, :$license-file);
-}
-
-sub provides(:$meta!) {
-    my @provides;
-    return $meta<provides>.keys.map({"Provides:       perl6($_)"}).join("\n");
-}
-
-sub requires(:$meta!) {
-    my @requires = 'perl6 >= 2016.12';
-    @requires.append: $meta<depends>.map({"perl6($_)"}) if $meta<depends>;
-    @requires.push: 'Distribution::Builder' ~ $meta<builder> if $meta<builder>;
-    return @requires.map({"Requires:       $_"}).join("\n");
+        fill-template(
+            :$meta,
+            :$package-name,
+            :$version,
+            :$tar-name,
+            :$source-url,
+            :$license-file,
+        );
 }
 
 sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-name! --> Seq) {
@@ -66,7 +59,32 @@ sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-na
         return;
 }
 
-sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-url!, :$provides!, :$requires!, :$license-file!) {
+sub provides(:$meta!) {
+    my @provides;
+    return $meta<provides>.keys.map({"Provides:       perl6($_)"}).join("\n");
+}
+
+sub map-dependency($requires) {
+    "perl6($requires)"
+}
+
+sub requires(:$meta!) {
+    my @requires = 'perl6 >= 2016.12';
+    @requires.append: $meta<depends>.map({ map-dependency($_) }) if $meta<depends>;
+    return @requires.map({"Requires:       $_"}).join("\n");
+}
+
+sub build-requires(:$meta!) {
+    my @requires = 'rakudo >= 2017.04.2';
+    @requires.append: $meta<build-depends>.map({ map-dependency($_) }) if $meta<build-depends>;
+    @requires.push: 'Distribution::Builder' ~ $meta<builder> if $meta<builder>;
+    return @requires.map({"BuildRequires:  $_"}).join("\n");
+}
+
+sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-url!, :$license-file!) {
+    my $provides = provides(:$meta);
+    my $requires = requires(:$meta);
+    my $build-requires = build-requires(:$meta);
     my $LICENSE = $license-file ?? " $license-file" !! '';
     my $RPM_BUILD_ROOT = '$RPM_BUILD_ROOT'; # Workaround for https://rt.perl.org/Ticket/Display.html?id=127226
     q:s:to/TEMPLATE/
@@ -95,7 +113,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         Url:            $source-url
         Group:          Development/Languages/Other
         Source0:        $tar-name
-        BuildRequires:  rakudo >= 2017.04.2
+        $build-requires
         $requires
         $provides
         BuildRoot:      %{_tmppath}/%{name}-%{version}-build
