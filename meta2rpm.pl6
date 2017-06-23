@@ -68,7 +68,26 @@ sub map-dependency($requires is copy) {
     my %adverbs = flat ($requires ~~ s:g/':' $<key> = (\w+) '<' $<value> = (<-[>]>+) '>'//)
         .map({$_<key>.Str, $_<value>.Str});
     given %adverbs<from> {
-        when 'native' { '%{_libdir}/' ~ $*VM.platform-library-name($requires.IO) }
+        when 'native' {
+            if %adverbs<ver> {
+                my $lib = $*VM.platform-library-name($requires.IO, :version(Version.new(%adverbs<ver>)));
+                my $path = </usr/lib64 /lib64 /usr/lib /lib>.first({$_.IO.add($lib).e});
+                if $path {
+                    my $proc = run '/usr/lib/rpm/find-provides', :in, :out;
+                    $proc.in.say($path.IO.add($lib).resolve.Str);
+                    $proc.in.close;
+                    $proc.out.lines;
+                }
+                else {
+                    note "Falling back to depending on the library path as I couldn't find $lib";
+                    '%{_libdir}/' ~ $*VM.platform-library-name($requires.IO)
+                }
+            }
+            else {
+                note "Package doesn't specify a library version, so I have to fall back to depending on library path.";
+                '%{_libdir}/' ~ $*VM.platform-library-name($requires.IO)
+            }
+        }
         when 'bin'    { '%{_bindir}/' ~ $requires }
         default       { "perl6($requires)" }
     }
@@ -76,13 +95,13 @@ sub map-dependency($requires is copy) {
 
 sub requires(:$meta!) {
     my @requires = 'perl6 >= 2016.12';
-    @requires.append: $meta<depends>.map({ map-dependency($_) }) if $meta<depends>;
+    @requires.append: flat $meta<depends>.map({ map-dependency($_) }) if $meta<depends>;
     return @requires.map({"Requires:       $_"}).join("\n");
 }
 
 sub build-requires(:$meta!) {
     my @requires = 'rakudo >= 2017.04.2';
-    @requires.append: $meta<build-depends>.map({ map-dependency($_) }) if $meta<build-depends>;
+    @requires.append: flat $meta<build-depends>.map({ map-dependency($_) }) if $meta<build-depends>;
     @requires.push: 'Distribution::Builder' ~ $meta<builder> if $meta<builder>;
     return @requires.map({"BuildRequires:  $_"}).join("\n");
 }
