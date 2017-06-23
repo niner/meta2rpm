@@ -64,8 +64,14 @@ sub provides(:$meta!) {
     return $meta<provides>.keys.map({"Provides:       perl6($_)"}).join("\n");
 }
 
-sub map-dependency($requires) {
-    "perl6($requires)"
+sub map-dependency($requires is copy) {
+    my %adverbs = flat ($requires ~~ s:g/':' $<key> = (\w+) '<' $<value> = (<-[>]>+) '>'//)
+        .map({$_<key>.Str, $_<value>.Str});
+    given %adverbs<from> {
+        when 'native' { '%{_libdir}/' ~ $*VM.platform-library-name($requires.IO) }
+        when 'bin'    { '%{_bindir}/' ~ $requires }
+        default       { "perl6($requires)" }
+    }
 }
 
 sub requires(:$meta!) {
