@@ -1,25 +1,34 @@
-sub MAIN() {
+multi MAIN() {
     for "META.list".IO.lines -> $uri {
         my $request = run 'curl', '-s', $uri, :out;
         my $meta-text = $request.out.slurp;
-        my $meta = Rakudo::Internals::JSON.from-json($meta-text);
-        my $package-name = "perl6-{ $meta<name>.subst: /'::'/, '-', :g }";
-        my $version = $meta<version> eq '*' ?? '0.1' !! $meta<version>;
-        my $source-url = $meta<source-url> || $meta<support><source>;
-        $meta<license> //= '';
-
-        my $dir = "packages/$package-name";
-        my $source-dir = "$dir/{$package-name}-$version";
-        my $tar-name = "{$package-name}-$version.tar.xz";
-
-        mkdir $dir;
-        fetch-source(:$package-name, :$source-url, :$source-dir, :$dir, :$tar-name);
-        my $provides = provides(:$meta);
-        my $requires = requires(:$meta);
-
-        $dir.IO.child("$package-name.spec").spurt:
-            fill-template(:$meta, :$package-name, :$version, :$tar-name, :$source-url, :$provides, :$requires);
+        create-spec-file($meta-text);
     }
+}
+
+multi MAIN($meta-file) {
+    create-spec-file($meta-file.IO.slurp);
+}
+
+sub create-spec-file($meta-text) {
+    my $meta = Rakudo::Internals::JSON.from-json($meta-text);
+    my $package-name = "perl6-{ $meta<name>.subst: /'::'/, '-', :g }";
+    my $version = $meta<version> eq '*' ?? '0.1' !! $meta<version>;
+    my $source-url = $meta<source-url> || $meta<support><source>;
+    $meta<license> //= '';
+
+    my $dir = "packages/$package-name".IO;
+    my $source-dir = "{$package-name}-$version";
+    my $tar-name = "{$package-name}-$version.tar.xz";
+
+    mkdir $dir;
+    my @files = fetch-source(:$package-name, :$source-url, :$source-dir, :$dir, :$tar-name);
+    my $provides = provides(:$meta);
+    my $requires = requires(:$meta);
+    my $license-file = @files.grep({$_ eq 'LICENSE' or $_ eq 'LICENCE'}).first // '';
+
+    $dir.IO.child("$package-name.spec").spurt:
+        fill-template(:$meta, :$package-name, :$version, :$tar-name, :$source-url, :$provides, :$requires, :$license-file);
 }
 
 sub provides(:$meta!) {
@@ -34,27 +43,31 @@ sub requires(:$meta!) {
     return @requires.map({"Requires:       $_"}).join("\n");
 }
 
-sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-name!) {
+sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-name! --> Seq) {
         if $source-url {
             if $source-url.starts-with('git://') or $source-url.ends-with('.git') {
-                run <git clone>, $source-url, $source-dir unless $source-dir.IO.e;
-                run <tar cJf>, "$dir/$tar-name", $source-dir unless "$dir/$tar-name".IO.e;
+                run <git clone>, $source-url, "$dir/$source-dir" unless $dir.add($source-dir).e;
+                run <tar --exclude=.git -cJf>, $tar-name, $source-dir, :cwd($dir) unless $dir.add($tar-name).e;
             }
             else {
-                run 'wget', '-q', $source-url, '-O', "$dir/$tar-name" unless "$dir/$tar-name".IO.e;
+                run 'wget', '-q', $source-url, '-O', "$dir/$tar-name" unless $dir.add($tar-name).e;
             }
+            return run(<tar tf>, "$dir/$tar-name", :out).out.lines.map(*.substr($source-dir.chars + 1));
             CATCH {
                 default {
                     note "Failed to fetch $source-url";
                 }
             }
+
         }
         else {
             note "$package-name does not have a source-url!";
         }
+        return;
 }
 
-sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-url!, :$provides!, :$requires!) {
+sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-url!, :$provides!, :$requires!, :$license-file!) {
+    my $LICENSE = $license-file ?? " $license-file" !! '';
     q:s:to/TEMPLATE/
         #
         # spec file for package $package-name
@@ -83,7 +96,6 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         Source0:        $tar-name
         BuildRequires:  rakudo >= 2017.04.2
         $requires
-        PreReq:
         $provides
         BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
@@ -106,7 +118,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
 
         %files
         %defattr(-,root,root)
-        %doc README.md LICENSE
+        %doc README.md$LICENSE
         TEMPLATE
 }
 
