@@ -1,3 +1,5 @@
+use JSON::Fast;
+
 multi MAIN() {
     for "META.list".IO.lines -> $uri {
         my $request = run 'curl', '-s', $uri, :out;
@@ -11,7 +13,7 @@ multi MAIN($meta-file) {
 }
 
 sub create-spec-file($meta-text) {
-    my $meta = Rakudo::Internals::JSON.from-json($meta-text);
+    my $meta = from-json($meta-text);
     my $package-name = "perl6-{ $meta<name>.subst: /'::'/, '-', :g }";
     my $version = $meta<version> eq '*' ?? '0.1' !! $meta<version>;
     my $source-url = $meta<source-url> || $meta<support><source>;
@@ -44,6 +46,12 @@ sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-na
             }
             else {
                 run 'wget', '-q', $source-url, '-O', "$dir/$tar-name" unless $dir.add($tar-name).e;
+                run 'tar', 'xf', $tar-name, :cwd($dir);
+
+                my $top-level-dir = $source-url.subst(/.*\//, '').subst(/'.tar.gz'||'.tgz'/, '');
+
+                "$dir/$top-level-dir".IO.rename("$dir/$source-dir");
+                run 'tar', 'cJf', $tar-name, $source-dir, :cwd($dir);
             }
             return run(<tar tf>, "$dir/$tar-name", :out).out.lines.map(*.substr($source-dir.chars + 1));
             CATCH {
@@ -169,4 +177,11 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         TEMPLATE
 }
 
+=begin comment
+When collecting a tar file not in git the file name may not be correct.
+To resolve this we will pack trhe file and then repack it with file name and configuration we want.
+=end comment
+
+
 # vim: ft=perl6
+
