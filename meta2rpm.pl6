@@ -9,12 +9,46 @@ multi MAIN() {
 }
 
 multi MAIN($meta-file) {
-    create-spec-file($meta-file.IO.slurp);
+    my $meta-text = $meta-file.IO.slurp;
+    create-spec-file($meta-text);
 }
 
-sub create-spec-file($meta-text) {
+multi MAIN(:$module!) {
+    my @sources =
+        'https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/cpan1.json',
+        'https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json';
+    my @source-metas = @sources.flatmap: { from-json run(<curl -->, $_, :out).out.slurp-rest };
+    my @all-metas = @source-metas.flatmap: *.list;
+    my %metas = @all-metas.map: {$_<name> => $_};
+
+    sub recursively-create-spec-files($module) {
+        my $meta = %metas{$module};
+        unless $meta {
+            note "Did not find META for $module!";
+            next;
+        }
+        create-spec-file($meta);
+        my @requires;
+        @requires.append: flat $meta<depends>.map({ map-dependency($_) }) if $meta<depends>;
+        @requires.append: flat $meta<build-depends>.map({ map-dependency($_) }) if $meta<build-depends>;
+        for @requires {
+            if $_ ~~ /'perl6(' (.*) ')'/ {
+                recursively-create-spec-files($0);
+            }
+        }
+    }
+
+    recursively-create-spec-files($module);
+}
+
+multi sub create-spec-file(Sub $meta-text) {
     my $meta = from-json($meta-text);
+    callwith($meta);
+}
+
+multi sub create-spec-file($meta) {
     my $package-name = "perl6-{ $meta<name>.subst: /'::'/, '-', :g }";
+    note $package-name;
     my $version = $meta<version> eq '*' ?? '0.1' !! $meta<version>;
     my $source-url = $meta<source-url> || $meta<support><source>;
     $meta<license> //= '';
