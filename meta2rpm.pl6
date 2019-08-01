@@ -41,7 +41,7 @@ multi MAIN(:$module!) {
     recursively-create-spec-files($module);
 }
 
-multi sub create-spec-file(Sub $meta-text) {
+multi sub create-spec-file(Str $meta-text) {
     my $meta = from-json($meta-text);
     callwith($meta);
 }
