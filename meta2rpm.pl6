@@ -17,8 +17,8 @@ multi MAIN(:$module!) {
     my @sources =
         'https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/cpan1.json',
         'https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json';
-    my @source-metas = @sources.flatmap: { from-json run(<curl -->, $_, :out).out.slurp-rest };
-    my @all-metas = @source-metas.flatmap: *.list;
+    my @source-metas = @sources.map({ from-json run(<curl -->, $_, :out).out.slurp-rest }).flat;
+    my @all-metas = @source-metas.map(*.list).flat;
     my %metas = @all-metas.map: {$_<name> => $_};
 
     sub recursively-create-spec-files($module) {
