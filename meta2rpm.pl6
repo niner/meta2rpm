@@ -153,6 +153,8 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
     my $provides = provides(:$meta);
     my $requires = requires(:$meta);
     my $build-requires = build-requires(:$meta);
+    my $summary = $meta<description>;
+    $summary.=chop if $summary and $summary.ends-with('.');
     my $LICENSE = $license-file ?? "\n%license $license-file" !! '';
     my $RPM_BUILD_ROOT = '$RPM_BUILD_ROOT'; # Workaround for https://rt.perl.org/Ticket/Display.html?id=127226
     q:s:to/TEMPLATE/
@@ -177,7 +179,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         Version:        $version
         Release:        1.1
         License:        $meta<license>
-        Summary:        $meta<description>
+        Summary:        $summary
         Url:            $source-url
         Group:          Development/Languages/Other
         Source0:        $tar-name
