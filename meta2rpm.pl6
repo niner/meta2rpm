@@ -104,7 +104,7 @@ sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-na
 
 sub provides(:$meta!) {
     my @provides;
-    return $meta<provides>.keys.map({"Provides:       perl6($_)"}).join("\n");
+    return ($meta<name>, |$meta<provides>.keys).sort.map({"Provides:       perl6($_)"}).join("\n");
 }
 
 sub map-dependency($requires is copy) {
