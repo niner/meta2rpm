@@ -153,7 +153,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
     my $provides = provides(:$meta);
     my $requires = requires(:$meta);
     my $build-requires = build-requires(:$meta);
-    my $LICENSE = $license-file ?? " $license-file" !! '';
+    my $LICENSE = $license-file ?? "\n%license $license-file" !! '';
     my $RPM_BUILD_ROOT = '$RPM_BUILD_ROOT'; # Workaround for https://rt.perl.org/Ticket/Display.html?id=127226
     q:s:to/TEMPLATE/
         #
