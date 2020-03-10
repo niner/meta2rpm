@@ -201,6 +201,9 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
                 --for=vendor \\
                 --from=.
 
+        rm -f %{buildroot}%{_datadir}/perl6/vendor/bin/*-j
+        rm -f %{buildroot}%{_datadir}/perl6/vendor/bin/*-js
+
         %post
 
         %postun
