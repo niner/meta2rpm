@@ -194,6 +194,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         Url:            $source-url
         Group:          Development/Languages/Other
         Source0:        $tar-name
+        BuildRequires:  fdupes
         $build-requires
         $requires
         $provides
@@ -211,6 +212,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
                 --to=$RPM_BUILD_ROOT%{_datadir}/perl6/vendor \\
                 --for=vendor \\
                 --from=.
+        %fdupes %{buildroot}/%{_datadir}/perl6/vendor
 
         rm -f %{buildroot}%{_datadir}/perl6/vendor/bin/*-j
         rm -f %{buildroot}%{_datadir}/perl6/vendor/bin/*-js
