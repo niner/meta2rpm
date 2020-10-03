@@ -73,7 +73,7 @@ multi sub create-spec-file($meta) {
         );
 }
 
-sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-name! --> Seq) {
+sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, IO::Path :$dir!, :$tar-name! --> Seq) {
         if $source-url {
             if $source-url.starts-with('git://') or $source-url.ends-with('.git') {
                 run <git clone>, $source-url, "$dir/$source-dir" unless $dir.add($source-dir).e;
@@ -83,7 +83,9 @@ sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-na
                 run 'wget', '-q', $source-url, '-O', "$dir/$tar-name" unless $dir.add($tar-name).e;
                 run 'tar', 'xf', $tar-name, :cwd($dir);
 
-                my $top-level-dir = $source-url.subst(/.*\//, '').subst(/'.tar.gz'||'.tgz'/, '');
+                my @top-level-dirs = $dir.dir.grep(* ~~ :d);
+                die "Too many top level directories: @top-level-dirs" if @top-level-dirs.elems != 1;
+                my $top-level-dir = @top-level-dirs[0].basename;
 
                 "$dir/$top-level-dir".IO.rename("$dir/$source-dir");
                 run 'tar', 'cJf', $tar-name, $source-dir, :cwd($dir);
@@ -92,6 +94,7 @@ sub fetch-source(:$package-name!, :$source-url!, :$source-dir!, :$dir!, :$tar-na
             CATCH {
                 default {
                     note "Failed to fetch $source-url";
+                    .rethrow;
                 }
             }
 
