@@ -209,7 +209,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         %build
 
         %install
-        RAKUDO_RERESOLVE_DEPENDENCIES=0 perl6 %{_datadir}/perl6/bin/install-perl6-dist \\
+        RAKUDO_MODULE_DEBUG=1 RAKUDOE_PRECOMP_VERBOSE=1 RAKUDO_RERESOLVE_DEPENDENCIES=0 raku --ll-exception %{_datadir}/perl6/bin/install-perl6-dist \\
                 --to=$RPM_BUILD_ROOT%{_datadir}/perl6/vendor \\
                 --for=vendor \\
                 --from=.
