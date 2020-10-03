@@ -201,6 +201,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
         BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 
         %description
+        $summary
 
         %prep
         %setup -q
