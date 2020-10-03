@@ -141,13 +141,21 @@ sub map-dependency($requires is copy) {
 
 sub requires(:$meta!) {
     my @requires = 'perl6 >= 2016.12';
-    @requires.append: flat $meta<depends>.map({ map-dependency($_) }) if $meta<depends>;
+    @requires.append: flat $meta<depends>.map({ map-dependency($_) })
+        if $meta<depends> and $meta<depends> ~~ Positional;
+    @requires.append: flat $meta<depends><runtime><requires>.map({ map-dependency($_) })
+        if $meta<depends> and $meta<depends> ~~ Associative;
     return @requires.map({"Requires:       $_"}).join("\n");
 }
 
 sub build-requires(:$meta!) {
     my @requires = 'rakudo >= 2017.04.2';
-    @requires.append: flat $meta<build-depends>.map({ map-dependency($_) }) if $meta<build-depends>;
+    @requires.append: flat $meta<depends>.map({ map-dependency($_) })
+        if $meta<depends> and $meta<depends> ~~ Positional;
+    @requires.append: flat $meta<depends><build><requires>.map({ map-dependency($_) })
+        if $meta<depends> and $meta<depends> ~~ Associative;
+    @requires.append: flat $meta<build-depends>.map({ map-dependency($_) })
+        if $meta<build-depends>;
     @requires.push: 'Distribution::Builder' ~ $meta<builder> if $meta<builder>;
     return @requires.map({"BuildRequires:  $_"}).join("\n");
 }
