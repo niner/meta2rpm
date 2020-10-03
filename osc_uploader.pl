@@ -81,7 +81,7 @@ sub main {
         system "osc co $project $name -M -c";
         system "osc remove $name/_meta";
         unlink "$name/_meta";
-        system "osc add $name/*";
+        system 'osc add ' . join ' ', grep { not -d $_ } glob "$name/*";
         chdir  $name;
         system "osc commit -m 'Adding $name'";
         chdir  "../"
