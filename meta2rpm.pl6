@@ -217,10 +217,7 @@ sub fill-template(:$meta!, :$package-name!, :$tar-name!, :$version!, :$source-ur
 
         rm -f %{buildroot}%{_datadir}/perl6/vendor/bin/*-j
         rm -f %{buildroot}%{_datadir}/perl6/vendor/bin/*-js
-
-        %post
-
-        %postun
+        find %{buildroot}/%{_datadir}/perl6/vendor/bin/ -type f -exec sed -i -e '1s:!/usr/bin/env :!/usr/bin/:' '{}' \;
 
         %files
         %defattr(-,root,root)
