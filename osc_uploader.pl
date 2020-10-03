@@ -61,9 +61,17 @@ sub main {
         $title    =~ s/perl6-//;
         $title    =~ s/-/::/;
 
+        my $spec = (glob "$name/*.spec")[0];
+        open my $specfh, '<', $spec;
+        my $summary;
+        while (<$specfh>) {
+            last if ($summary) = /^Summary:\s+(.+)$/xm;
+        }
+        close $specfh;
+
         my $meta_file = "<package name='$name'>\n"
             . "    <title>$title</title>\n"
-            . "    <description></description>\n"
+            . "    <description>$summary</description>\n"
             . "</package>";
 
         write_text("$name/meta", $meta_file);
