@@ -49,7 +49,7 @@ module RpmSpecMaker {
             run <tar --exclude=.git -cJf>, $tar-name, $source-dir, :cwd($dir) unless $dir.add($tar-name).e;
         }
         else {
-            run 'curl', $source-url, '-o', "$dir/$tar-name" unless $dir.add($tar-name).e;
+            run 'curl', '-s', $source-url, '-o', "$dir/$tar-name" unless $dir.add($tar-name).e;
             run 'tar', 'xf', $tar-name, :cwd($dir);
 
             my @top-level-dirs = $dir.dir.grep(* ~~ :d);
@@ -105,20 +105,26 @@ module RpmSpecMaker {
     }
 
     sub requires(:$meta!) is export {
+        return "Requires:       perl6 >= 2016.12" if not $meta<depends>;
+
         my @requires = 'perl6 >= 2016.12';
         @requires.append: flat $meta<depends>.map({ map-dependency($_) })
-                if $meta<depends> and $meta<depends> ~~ Positional;
+                if $meta<depends> ~~ Positional;
         @requires.append: flat $meta<depends><runtime><requires>.map({ map-dependency($_) })
-                if $meta<depends> and $meta<depends> ~~ Associative;
+                if $meta<depends> ~~ Associative;
         return @requires.map({"Requires:       $_"}).join("\n");
     }
 
     sub build-requires(:$meta!) is export {
         my @requires = 'rakudo >= 2017.04.2';
-        @requires.append: flat $meta<depends>.map({ map-dependency($_) })
-                if $meta<depends> and $meta<depends> ~~ Positional;
-        @requires.append: flat $meta<depends><build><requires>.map({ map-dependency($_) })
-                if $meta<depends> and $meta<depends> ~~ Associative;
+
+        if $meta<depends> {
+            @requires.append: flat $meta<depends>.map({ map-dependency($_) })
+                    if $meta<depends> ~~ Positional;
+            @requires.append: flat $meta<depends><build><requires>.map({ map-dependency($_) })
+                    if $meta<depends> ~~ Associative;
+        }
+
         @requires.append: flat $meta<build-depends>.map({ map-dependency($_) })
                 if $meta<build-depends>;
         @requires.push: 'Distribution::Builder' ~ $meta<builder> if $meta<builder>;
