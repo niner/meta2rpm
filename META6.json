@@ -1,0 +1,16 @@
+{
+  "name": "RpmSpecMaker",
+  "description": "Write me!",
+  "version": "0.1",
+  "perl": "6.*",
+  "auth": "Write me!",
+  "depends": [],
+  "build-depends": [],
+  "test-depends": [],
+  "provides": {
+    "RpmSpecMaker": "lib/RpmSpecMaker.pm6"
+  },
+  "resources": [],
+  "license": "Write me!",
+  "source-url": "Write me!"
+}
