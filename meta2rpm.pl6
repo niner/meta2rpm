@@ -28,7 +28,7 @@ multi MAIN(:$module!) {
     my @sources =
         'https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/cpan1.json',
         'https://raw.githubusercontent.com/ugexe/Perl6-ecosystems/master/p6c1.json';
-    my @source-metas = @sources.map({ from-json run(<curl -->, $_, :out).out.slurp }).flat
+    my @source-metas = @sources.map({ say "Fetch: $_"; from-json run(<curl -s -->, $_, :out).out.slurp }).flat
         .sort: { Version.new($^a<version>) <=> Version.new($^b<version>) };
     my %metas = @source-metas.map: {$_<name> => $_};
 
