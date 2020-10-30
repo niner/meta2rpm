@@ -7,7 +7,7 @@ use RpmSpecMaker;
 rm-directories("packages".IO);
 
 
-plan 12;
+plan 22;
 
 dies-ok { generate-spec('No valid json') }, "Invalid json dies";
 
@@ -65,6 +65,16 @@ is build-requires(meta => {build-depends =>  ["LibraryMake"], depends => { build
 
 my $spec = generate-spec($meta);
 
+like $spec, /'Source:         perl6-IO-Prompt-0.0.2.tar.xz'/, "Source found in spec file";
+like $spec, /'Name:           perl6-IO-Prompt'/, "Name found in spec file";
+like $spec, /'Version:        0.0.2'/, "Version found in spec file";
+like $spec, /'Release:        1.1'/, "Release found in spec file";
+like $spec, /'License:        Artistic-2.0'/, "License found in spec file";
+like $spec, /'BuildRequires:  fdupes'/, "BuildRequires found in spec file";
+like $spec, /'BuildRequires:  fdupes' \n 'BuildRequires:  rakudo >= 2017.04.2'/, "BuildRequires found in spec file";
+like $spec, /'Requires:       perl6 >= 2016.12'/, "Requires found in spec file";
+like $spec, /'Provides:       perl6(IO::Prompt)'/, "Provides found in spec file";
+like $spec, /'BuildRoot:      %{_tmppath}/%{name}-%{version}-build'/, "BuildRoot found in spec file";
 
 sub rm-directories(IO::Path $dir) {
     return unless $dir.e;
