@@ -140,7 +140,7 @@ module RpmSpecMaker {
         my $LICENSE = $license-file ?? "\n%license $license-file" !! '';
         my $RPM_BUILD_ROOT = '$RPM_BUILD_ROOT'; # Workaround for https://rt.perl.org/Ticket/Display.html?id=127226
         q:s:to/TEMPLATE/
-                #
+        #
         # spec file for package $package-name
         #
         # Copyright (c) 2017 SUSE LINUX Products GmbH, Nuernberg, Germany.
@@ -164,7 +164,7 @@ module RpmSpecMaker {
         Summary:        $summary
         Url:            $source-url
         Group:          Development/Languages/Other
-        Source0:        $tar-name
+        Source:         $tar-name
         BuildRequires:  fdupes
         $build-requires
         $requires
