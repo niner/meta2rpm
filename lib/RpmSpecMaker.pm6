@@ -105,13 +105,15 @@ module RpmSpecMaker {
     }
 
     sub requires(:$meta!) is export {
-        return "Requires:       perl6 >= 2016.12" if not $meta<depends>;
-
         my @requires = 'perl6 >= 2016.12';
-        @requires.append: flat $meta<depends>.map({ map-dependency($_) })
-                if $meta<depends> ~~ Positional;
-        @requires.append: flat $meta<depends><runtime><requires>.map({ map-dependency($_) })
-                if $meta<depends> ~~ Associative;
+
+        if $meta<depends> {
+            @requires.append: flat $meta<depends>.map({ map-dependency($_) })
+                    if $meta<depends> ~~ Positional;
+            @requires.append: flat $meta<depends><runtime><requires>.map({ map-dependency($_) })
+                    if $meta<depends> ~~ Associative;
+        }
+
         return @requires.map({"Requires:       $_"}).join("\n");
     }
 
