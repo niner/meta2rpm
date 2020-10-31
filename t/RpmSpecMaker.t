@@ -45,20 +45,27 @@ is get-name($meta), "perl6-IO-Prompt", "Name found";
 is provides(meta => from-json($valid-json)), "Provides:       perl6(IO::Prompt)", "Provides returns proper string";
 
 is requires(:$meta), "Requires:       perl6 >= 2016.12", "Requires returns one dependency";
-is requires( meta => { depends => ["Method::Also"] }),
-    "Requires:       perl6 >= 2016.12\nRequires:       perl6(Method::Also)",
-    "Requires returns several dependencies";
-is requires( meta => { depends => { runtime => { "requires" => ["Cairo","Color"] } } }),
-    "Requires:       perl6 >= 2016.12\nRequires:       perl6(Cairo)\nRequires:       perl6(Color)",
-    "Requires returns several runtime dependencies";
+is requires( meta => { depends => ["Method::Also"] }), chomp(q:to/SPEC/), "Requires returns several dependencies";
+    Requires:       perl6 >= 2016.12
+    Requires:       perl6(Method::Also)
+    SPEC
+is requires( meta => { depends => { runtime => { "requires" => ["Cairo","Color"] } } }), chomp(q:to/SPEC/), "Requires returns several runtime dependencies";
+    Requires:       perl6 >= 2016.12
+    Requires:       perl6(Cairo)
+    Requires:       perl6(Color)
+    SPEC
 
 is build-requires(:$meta), "BuildRequires:  rakudo >= 2017.04.2", "Build-requires returns one dependency";
-is build-requires(meta => {build-depends =>  ["LibraryMake","Pod::To::Markdown"] } ),
-    "BuildRequires:  rakudo >= 2017.04.2\nBuildRequires:  perl6(LibraryMake)\nBuildRequires:  perl6(Pod::To::Markdown)",
-    "Build-requires returns several dependency";
-is build-requires(meta => {build-depends =>  ["LibraryMake"], depends => { build => { "requires" => ["Pod::To::Markdown"]}} } ),
-    "BuildRequires:  rakudo >= 2017.04.2\nBuildRequires:  perl6(Pod::To::Markdown)\nBuildRequires:  perl6(LibraryMake)",
-    "Build-requires returns also depends dependency";
+is build-requires(meta => {build-depends =>  ["LibraryMake","Pod::To::Markdown"] } ), chomp(q:to/SPEC/), "Build-requires returns several dependency";
+    BuildRequires:  rakudo >= 2017.04.2
+    BuildRequires:  perl6(LibraryMake)
+    BuildRequires:  perl6(Pod::To::Markdown)
+    SPEC
+is build-requires(meta => {build-depends =>  ["LibraryMake"], depends => { build => { "requires" => ["Pod::To::Markdown"]}} } ), chomp(q:to/SPEC/), "Build-requires returns also depends dependency";
+    BuildRequires:  rakudo >= 2017.04.2
+    BuildRequires:  perl6(Pod::To::Markdown)
+    BuildRequires:  perl6(LibraryMake)
+    SPEC
 
 my $package-dir = tempdir().IO;
 my $spec = generate-spec(:$meta, :$package-dir);
