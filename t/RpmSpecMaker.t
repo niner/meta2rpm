@@ -1,11 +1,9 @@
 use Test;
 use lib 'lib';
 use JSON::Fast;
+use File::Temp;
 
 use RpmSpecMaker;
-
-rm-directories("packages".IO);
-
 
 plan 22;
 
@@ -36,14 +34,13 @@ my $valid-json = q:to/END/;
 }
 END
 
-dies-ok { generate-spec($valid-json) }, "Dies without created package directory";
-
 is get-directory("perl6-IO-Prompt"), "packages/perl6-IO-Prompt", "Package directory found";
 get-directory("perl6-IO-Prompt").mkdir;
 
 lives-ok {generate-spec($valid-json)}, "No exception for valid json string and crated package directory";
 my $meta = from-json($valid-json);
 
+dies-ok { generate-spec(:$meta, "doesnotexists".IO) }, "Dies without created package directory";
 is get-name($meta), "perl6-IO-Prompt", "Name found";
 is provides(meta => from-json($valid-json)), "Provides:       perl6(IO::Prompt)", "Provides returns proper string";
 
@@ -63,7 +60,8 @@ is build-requires(meta => {build-depends =>  ["LibraryMake"], depends => { build
     "BuildRequires:  rakudo >= 2017.04.2\nBuildRequires:  perl6(Pod::To::Markdown)\nBuildRequires:  perl6(LibraryMake)",
     "Build-requires returns also depends dependency";
 
-my $spec = generate-spec($meta);
+my $package-dir = tempdir().IO;
+my $spec = generate-spec(:$meta, :$package-dir);
 
 like $spec, /'Source:         perl6-IO-Prompt-0.0.2.tar.xz'/, "Source found in spec file";
 like $spec, /'Name:           perl6-IO-Prompt'/, "Name found in spec file";
@@ -75,14 +73,3 @@ like $spec, /'BuildRequires:  fdupes' \n 'BuildRequires:  rakudo >= 2017.04.2'/,
 like $spec, /'Requires:       perl6 >= 2016.12'/, "Requires found in spec file";
 like $spec, /'Provides:       perl6(IO::Prompt)'/, "Provides found in spec file";
 like $spec, /'BuildRoot:      %{_tmppath}/%{name}-%{version}-build'/, "BuildRoot found in spec file";
-
-sub rm-directories(IO::Path $dir) {
-    return unless $dir.e;
-
-    for $dir.dir -> $item {
-        rm-directories($item) if $item.d;
-
-        $item.unlink;
-    }
-    $dir.rmdir;
-}

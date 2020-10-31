@@ -1,4 +1,5 @@
 use JSON::Fast;
+use lib 'lib';
 
 use RpmSpecMaker;
 
@@ -56,10 +57,9 @@ multi MAIN(:$module!) {
 
 sub create-spec-file($meta) {
     my $package-name = get-name($meta);
-    my $package-dir = get-directory($package-name);
 
-    $package-dir.mkdir;
-    my $spec = generate-spec($meta);
+    my $package-dir = "./packages".IO.add($package-name).mkdir;
+    my $spec = generate-spec(:$meta, :$package-dir);
     $package-dir.add($package-name ~ ".spec").spurt($spec);
 }
 

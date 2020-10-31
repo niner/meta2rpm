@@ -14,18 +14,18 @@ module RpmSpecMaker {
         return "packages/$package-name".IO;
     }
 
-    multi sub generate-spec($meta --> Str) is export {
+    multi sub generate-spec(Hash :$meta!, IO::Path :$package-dir! --> Str) is export {
+        die "$package-dir does not exists" unless $package-dir.e;
+
         my $package-name = get-name($meta);
         my $version = $meta<version> eq '*' ?? '0.1' !! $meta<version>;
         my $source-url = $meta<source-url> || $meta<support><source>;
         $meta<license> //= '';
 
-        my $dir = get-directory($package-name);
         my $source-dir = "{$package-name}-$version";
         my $tar-name = "{$package-name}-$version.tar.xz";
 
-        die "$dir does not exists" unless $dir.e;
-        my @files = fetch-source(:$package-name, :$source-url, :$source-dir, :$dir, :$tar-name);
+        my @files = fetch-source(:$package-name, :$source-url, :$source-dir, dir => $package-dir, :$tar-name);
         my $license-file = @files.grep({$_ eq 'LICENSE' or $_ eq 'LICENCE'}).first // '';
 
         return fill-template(
