@@ -5,7 +5,7 @@ use File::Temp;
 
 use RpmSpecMaker;
 
-plan 22;
+plan 21;
 
 dies-ok { generate-spec('No valid json') }, "Invalid json dies";
 
@@ -33,9 +33,6 @@ my $valid-json = q:to/END/;
    "version" : "0.0.2"
 }
 END
-
-is get-directory("perl6-IO-Prompt"), "packages/perl6-IO-Prompt", "Package directory found";
-get-directory("perl6-IO-Prompt").mkdir;
 
 lives-ok {generate-spec($valid-json)}, "No exception for valid json string and crated package directory";
 my $meta = from-json($valid-json);

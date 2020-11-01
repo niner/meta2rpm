@@ -10,10 +10,6 @@ module RpmSpecMaker {
         return "perl6-{ $meta<name>.subst: /'::'/, '-', :g }";
     }
 
-    sub get-directory($package-name --> IO::Path) is export {
-        return "packages/$package-name".IO;
-    }
-
     multi sub generate-spec(Hash :$meta!, IO::Path :$package-dir! --> Str) is export {
         die "$package-dir does not exists" unless $package-dir.e;
 
