@@ -1,2 +1,4 @@
 /packages/
 /META.list
+.precomp
+.idea/
